@@ -57,7 +57,7 @@ class WineSpider(scrapy.Spider):
         cards = self.driver.find_elements(
             By.CLASS_NAME, "card__card--2R5Wh.wineCard__wineCardContent--3cwZt"
         )
-
+        i = 0
         for card in cards:
             if i >= WINE_NUMBER:  # 50개만 크롤링
                 return
