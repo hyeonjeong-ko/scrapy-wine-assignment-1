@@ -1,6 +1,6 @@
 # 🍇 scrapy-wine-assignment-1
 
-### 📊 데이터 크롤링 결과
+### 📊 데이터 크롤링 결과 (json 50개)
 <img width="486" alt="gdgd" src="https://github.com/hyeonjeong-ko/scrapy-wine-assignment-1/assets/72601276/9b9a3d80-a3a3-48c8-b929-8b212cf12087">
 
 
