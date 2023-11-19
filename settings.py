@@ -104,7 +104,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 
 MONGODB_URI = "mongodb://localhost:27017/"  # MongoDB 서버 호스트 및 포트 정보
 MONGODB_DATABASE = "vivino"  # 사용할 MongoDB 데이터베이스 이름
-dont_filter = True
+
 
 ITEM_PIPELINES = {
     "wine_scraper_lev3.pipelines.WineDataProcessingPipeline": 300,  # 파이프라인 우선순위
