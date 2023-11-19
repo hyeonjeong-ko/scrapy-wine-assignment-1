@@ -116,7 +116,6 @@ class WineSpider(scrapy.Spider):
 
             # 각 카드마다 상세 정보 수집
             detail_page_url = response.urljoin(link)
-            self.driver.implicitly_wait(30)
             yield scrapy.Request(
                 detail_page_url,
                 callback=self.parse_detail_page,
@@ -138,7 +137,6 @@ class WineSpider(scrapy.Spider):
         item["price_id"] = price_id
 
         self.driver.get(response.url)
-        self.driver.implicitly_wait(10)
 
         page_height = self.driver.execute_script("return document.body.scrollHeight")
         browser_window_height = self.driver.get_window_size(windowHandle="current")[
