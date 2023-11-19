@@ -13,3 +13,4 @@
 - 셀레니움의 `implicitly_wait` 설정이 Scrapy의 비동기 처리와 충돌을 일으킴을 예상.
 - Scrapy는 동시에 진행할 수 있는 요청의 수에 제한을 두고 있다고 함. `CONCURRENT_REQUESTS` 설정이 너무 낮으면, 한 번에 많은 요청을 처리하지 못할 수 있다 함.
 - 실제로 `CONCURRENT_REQUESTS`와 `DEFAULT_DELAY` 설정에 따라 크롤링 개수가 달라졌음.
+- **처리 흐름을 제대로 이해하지 않으면 예기치 않은 문제가 발생할 수 있다. 알고 쓰자...**
