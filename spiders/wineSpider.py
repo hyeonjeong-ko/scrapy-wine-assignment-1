@@ -3,9 +3,12 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from time import sleep
+from urllib.parse import urlparse, parse_qs
 from scrapy.http import TextResponse
 from ..items import WineItem
 import re
+import logging
+
 
 WINE_NUMBER = 50  # 와인 50개만 크롤링
 
@@ -24,7 +27,7 @@ class WineSpider(scrapy.Spider):
 
         self.driver = webdriver.Chrome(options=options)
 
-        url = "https://www.vivino.com/explore?e=eJwlhcEKwjAQBf_mHUutCF4efoA3Lx5EZE22IdBsZRtr-_dWHJiZU1h5viBsuSL1nMWzVhlQnPvmiPG50qVmS9NDZnVJitEjo04BRRYe2h8o2djiU293dv_t8Np8W9Q-m0aqfQHAUCQ5"
+        url = "https://www.vivino.com/explore?e=eJwlhcEKgzAQBf_mnbXQ46Mf4K2XHoqUbbKGQLPKmmr9-yoOzMwtbOzuCHseSAMX8axVPijOFuN7o0vNluaXLOqSFKNHRp0Divx4bQ5QsrHBWp89L-daTLtfizpk00i1P40YI9E"
         self.driver.get(url)
         self.driver.implicitly_wait(10)
 
@@ -49,75 +52,90 @@ class WineSpider(scrapy.Spider):
                     "return window.pageYOffset"
                 )
                 sleep(1)  # 컨텐츠 로딩 대기
+        self.driver.implicitly_wait(200)
 
-            cards = self.driver.find_elements(
-                By.CLASS_NAME, "card__card--2R5Wh.wineCard__wineCardContent--3cwZt"
+        cards = self.driver.find_elements(
+            By.CLASS_NAME, "card__card--2R5Wh.wineCard__wineCardContent--3cwZt"
+        )
+
+        for card in cards:
+            if i >= WINE_NUMBER:  # 50개만 크롤링
+                return
+            i += 1
+            # 셀레니움으로부터 얻은 HTML을 Scrapy Response 객체로 변환
+            new_response = TextResponse(
+                url=response.url,
+                body=card.get_attribute("outerHTML"),
+                encoding="utf-8",
             )
-            i = 0
-            for card in cards:
-                if i >= WINE_NUMBER:  # 50개만 크롤링
-                    break
-                i += 1
-                # 셀레니움으로부터 얻은 HTML을 Scrapy Response 객체로 변환
-                response = TextResponse(
-                    url=response.url,
-                    body=card.get_attribute("outerHTML"),
-                    encoding="utf-8",
-                )
 
-                wine_image = response.css(
-                    ".wineCard__bottleSection--3Bzic img::attr(src)"
-                ).get()
-                winery_name = response.css(
-                    ".wineInfoVintage__wineInfoVintage--bXr7s .wineInfoVintage__truncate--3QAtw::text"
-                ).get()
-                wine_name = response.css(".wineInfoVintage__vintage--VvWlU::text").get()
-                country = response.css(
-                    ".wineInfoLocation__countryFlag--2Davu::attr(title)"
-                ).get()
-                region = response.css(
-                    ".wineInfoLocation__regionAndCountry--1nEJz::text"
-                ).get()
-                rating = response.css(".vivinoRating_averageValue__uDdPM::text").get()
-                ratings_count = response.css(".vivinoRating_caption__xL84P::text").get()
-                link = response.css(".anchor_anchor__m8Qi-::attr(href)").get()
-                price = (
-                    response.css(".addToCart__ppcPrice--ydrd5::text")
-                    .get()
-                    .split("\\")[0]
-                )
+            wine_image = new_response.css(
+                ".wineCard__bottleSection--3Bzic img::attr(src)"
+            ).get()
+            winery_name = new_response.css(
+                ".wineInfoVintage__wineInfoVintage--bXr7s .wineInfoVintage__truncate--3QAtw::text"
+            ).get()
+            wine_name = new_response.css(".wineInfoVintage__vintage--VvWlU::text").get()
+            country = new_response.css(
+                ".wineInfoLocation__countryFlag--2Davu::attr(title)"
+            ).get()
+            region = new_response.css(
+                ".wineInfoLocation__regionAndCountry--1nEJz::text"
+            ).get()
+            rating = new_response.css(".vivinoRating_averageValue__uDdPM::text").get()
+            ratings_count = new_response.css(".vivinoRating_caption__xL84P::text").get()
+            link = new_response.css(".anchor_anchor__m8Qi-::attr(href)").get()
+            price = (
+                new_response.css(".addToCart__ppcPrice--ydrd5::text")
+                .get()
+                .split("\\")[0]
+            )
+            print(
+                f"Wine Image: {wine_image}, Winery Name: {winery_name}, Wine Name: {wine_name}, Country: {country}, Region: {region}, Rating: {rating}, Ratings Count: {ratings_count}, Link: {link}, Price: {price}"
+            )
+            # logging.info(
+            #     f"Wine Image: {wine_image}, Winery Name: {winery_name}, Wine Name: {wine_name}, Country: {country}, Region: {region}, Rating: {rating}, Ratings Count: {ratings_count}, Link: {link}, Price: {price}"
+            # )
 
-                # print(
-                #     f"Wine Image: {wine_image}, Winery Name: {winery_name}, Wine Name: {wine_name}, Country: {country}, Region: {region}, Rating: {rating}, Ratings Count: {ratings_count}, Link: {link}, Price: {price}"
-                # )
+            # WineItem 인스턴스 생성 후 데이터 삽입
+            item = WineItem()
 
-                # WineItem 인스턴스 생성 후 데이터 삽입
-                item = WineItem()
+            match = re.search(r"/w/(\d+)", link)
+            wine_id = match.group(1)
 
-                match = re.search(r"/w/(\d+)", link)
-                wine_id = match.group(1)
+            item["id"] = wine_id
+            item["wine_image"] = wine_image
+            item["winery_name"] = winery_name
+            item["wine_name"] = wine_name
+            item["country"] = country
+            item["region"] = region
+            item["rating"] = rating
+            item["ratings_count"] = ratings_count
+            item["link"] = link
+            item["price"] = price
 
-                item["_id"] = wine_id
-                item["wine_image"] = wine_image
-                item["winery_name"] = winery_name
-                item["wine_name"] = wine_name
-                item["country"] = country
-                item["region"] = region
-                item["rating"] = rating
-                item["ratings_count"] = ratings_count
-                item["link"] = link
-                item["price"] = price
-
-                # 각 카드마다 상세 정보 수집
-                detail_page_url = response.urljoin(link)
-                yield scrapy.Request(
-                    detail_page_url,
-                    callback=self.parse_detail_page,
-                    meta={"item": item},
-                )
+            # 각 카드마다 상세 정보 수집
+            detail_page_url = response.urljoin(link)
+            self.driver.implicitly_wait(30)
+            yield scrapy.Request(
+                detail_page_url,
+                callback=self.parse_detail_page,
+                meta={"item": item},
+            )
+            self.driver.implicitly_wait(100)
 
     def parse_detail_page(self, response):
         item = response.meta["item"]
+
+        parsed_url = urlparse(response.url)  # URL을 파싱
+        query_params = parse_qs(parsed_url.query)  # 쿼리 매개변수 추출
+
+        # 'year'와 'price_id' 추출
+        year = query_params.get("year", [None])[0]
+        price_id = query_params.get("price_id", [None])[0]
+
+        item["year"] = year
+        item["price_id"] = price_id
 
         self.driver.get(response.url)
         self.driver.implicitly_wait(10)
@@ -133,7 +151,7 @@ class WineSpider(scrapy.Spider):
             )
             current_position = self.driver.execute_script("return window.pageYOffset")
             sleep(1)
-
+        self.driver.implicitly_wait(3)
         # 스크롤 다운 후 가격 정보 추출
         price_element = self.driver.find_element(
             By.CLASS_NAME, "purchaseAvailabilityPPC__amount--2_4GT"
@@ -174,6 +192,7 @@ class WineSpider(scrapy.Spider):
             By.XPATH, "//*[contains(@class, 'tasteNote__popularKeyword')]"
         )
 
+        keywords = []
         for keyword in keywords_list:
             keywords.append(keyword.text)
 
@@ -208,6 +227,9 @@ class WineSpider(scrapy.Spider):
         item["taste_like"] = taste_profiles
         item["keywords"] = keywords
         item["reviews"] = reviews
+        print("====== wineSpider item saved. ======")
+        print(item)
+        print("====================================")
         yield item
 
     def closed(self, reason):
