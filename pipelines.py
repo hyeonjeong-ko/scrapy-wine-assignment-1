@@ -42,7 +42,7 @@ class WineDataProcessingPipeline:
 
         # MongoDB에 저장할 문서 형식 생성
         processed_item = {
-            "_id": adapter["_id"],
+            "_id": adapter["id"] + "-" + adapter["year"] + "-" + adapter["price_id"],
             "wine_image": adapter["wine_image"],
             "winery": {
                 "name": item["winery_name"],
@@ -50,12 +50,14 @@ class WineDataProcessingPipeline:
                 "region": adapter["region"],
             },
             "wine": {
+                "id": adapter["id"],
                 "name": adapter["wine_name"],
                 "rating": adapter["rating"],
                 "ratings_count": adapter["ratings_count"].split(" ")[0],
                 "detail_url": adapter["link"],
             },
             "price_info": {
+                "price_id": adapter["price_id"],
                 "price": adapter["price"].split(" ")[-1],
                 "average_price": adapter["average_price"],
             },
@@ -67,7 +69,20 @@ class WineDataProcessingPipeline:
         }
 
         # MongoDB에 데이터 저장
-        self.db[self.collection_name].insert_one(dict(processed_item))
+        # self.db[self.collection_name].insert_one(dict(processed_item))
+
+        # _id가 이미 존재하는지 확인
+        existing_item = self.db[self.collection_name].find_one(
+            {"_id": processed_item["_id"]}
+        )
+
+        # _id가 존재하지 않는 경우에만 삽입
+        if not existing_item:
+            self.db[self.collection_name].insert_one(processed_item)
+        else:
+            print(
+                f"Item with _id {processed_item['_id']} already exists. Skipping insertion."
+            )
 
         return processed_item
 

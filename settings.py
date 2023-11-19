@@ -95,15 +95,16 @@ FEED_EXPORT_ENCODING = "utf-8"
 
 # 추가된 코드
 
-CONCURRENT_REQUESTS = 3
+CONCURRENT_REQUESTS = 35
 
-DEFAULT_DELAY = 60  # Delay in seconds.
-MAX_DELAY = 600  # Sometimes, RETRY-AFTER has absurd values
+DEFAULT_DELAY = 15  # Delay in seconds.
+MAX_DELAY = 800  # Sometimes, RETRY-AFTER has absurd values
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
 
 MONGODB_URI = "mongodb://localhost:27017/"  # MongoDB 서버 호스트 및 포트 정보
 MONGODB_DATABASE = "vivino"  # 사용할 MongoDB 데이터베이스 이름
+dont_filter = True
 
 ITEM_PIPELINES = {
     "wine_scraper_lev3.pipelines.WineDataProcessingPipeline": 300,  # 파이프라인 우선순위
